@@ -48,8 +48,20 @@ pub fn run() {
     }
 
     println!("{}", v[0]);
+
+    let s1 = String::from("hello");
+    let s2 = s1.clone();
+    println!("{} {}", s1, s2);
+
+    let x = return_ownership();
+    println!("x:{}", x);
 }
 
 fn count(v: &Vec<i32>, val: i32) -> usize {
     v.into_iter().filter(|&&x| x == val).count()
+}
+
+fn return_ownership() -> String {
+    let s = String::from("yours");
+    s
 }
