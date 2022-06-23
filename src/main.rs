@@ -1,4 +1,5 @@
 mod control_flow;
+mod enums_pattern_matching;
 mod functions;
 mod guessing_game;
 mod ownership_rules;
@@ -17,5 +18,6 @@ fn main() {
     // ownership_rules::run();
     // slice_type::run();
     // structs::run()
-    struct_methods::run();
+    // struct_methods::run();
+    enums_pattern_matching::run();
 }
