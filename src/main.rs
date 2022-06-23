@@ -4,6 +4,8 @@ mod guessing_game;
 mod ownership_rules;
 mod ownership_simple;
 mod slice_type;
+mod struct_methods;
+mod structs;
 mod variables_and_mutability;
 
 fn main() {
@@ -13,5 +15,7 @@ fn main() {
     // functions::run();
     // control_flow::run();
     // ownership_rules::run();
-    slice_type::run();
+    // slice_type::run();
+    // structs::run()
+    struct_methods::run();
 }
