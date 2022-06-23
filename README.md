@@ -1160,3 +1160,228 @@ if let Coin::Quarter(state) = coin {
     count += 1;
 }
 ```
+
+## Packages, Crates and Modules
+
+Rust has a number of features that allow you to manage your code’s organization
+
+- `Packages`: A Cargo feature that lets you build, test, and share crates
+- `Crates`: A tree of modules that produces a library or executable
+- `Modules` and use: Let you control the organization, scope, and privacy of paths
+- `Paths`: A way of naming an item, such as a struct, function, or module
+
+### Packages and Crates
+
+A `package` is _one or more crates_ that provide a set of functionality. A package contains a `Cargo.toml` file that describes how to build those crates.
+
+A `crate` can be a binary crate or a library crate.
+
+- `Binary crates` are programs you can compile to an executable that you can run, such as a CLI tool or a server. They must have a function called `main`
+- `Library crates` don't have a `main` function, and they don't compile to an executable. They define functionality intended to be shared with multiple projects.
+  - e.g. the `rand` crate we used before
+
+The `crate root` is a source file that the Rust compiler starts from and makes up the root module of your crate.
+
+```sh
+$ cargo new my-project
+```
+
+When entered the command, Cargo created a `Cargo.toml` file, giving us a `package`.
+
+#### Bianry Crate vs Library Crate
+
+> Cargo follows a convention that `src/main.rs` is the crate root of a **binary crate** with the same name as the package
+
+> Likewise, Cargo knows that if the package directory contains `src/lib.rs`, the package contains a **libary crate** with the same name as the package.
+
+#### Defining Modules to Control Scope and Privacy
+
+> `use` keyword brings a path into scope.
+
+- **Start from the crate root**: When compiling a crate, the compiler first looks in the crate root file
+  - `src/lib.rs` for a library crate
+  - `src/main.rs` for a binary crate
+- **Declaring modules**: In the create root file, you can declare a new module with `mod garden`;
+  - 编译器会 look for the code inside the module in these places:
+    - Inline, directly following `mod garden`, within curly brackets instead of the semicolon
+    - In the file `src/garden.rs`
+    - In the file `src/garden/mod.rs`
+- **Declaring submodules**: In any file other than the crate root that's being compiled as part of the crate, you can declare submodules. 编译器会在子模块的以下位置查找代码
+
+  - Inline, directly following `mod vegetables`
+  - In the file `src/garden/vegetables.rs`
+  - In the file `src/garden/vegetables/mod.rs`
+
+- **Path to code in modules**: Once a module is being compiled as part of your crate, you can refer to code in that module from anywhere else in this crate by using the path `crate::garden::vegetables::Asparagus`
+- **Private vs Public**: Code within a module is **private from its parent modules by default**. To make a module public, declare it with `pub mod` instead of `mod`.
+  - To make items within a public module public as well, use `pub` before their declarations.
+- **The `use` keyword**: Within a scope, the `use` keyword creates shortcuts to items to reduce repetition of long paths.
+
+#### Grouping Related Code in Modules
+
+Modules let us organize within a crate into groups for readability and easy reuse.
+
+Modules also control the privacy of items, which is whether an item can be used by outside code.
+
+Create a library using `cargo new --lib restaurant`
+
+`src/lib.rs`
+
+```rs
+mod front_of_house {
+    mod hosting {
+        fn add_to_waitlist() {}
+
+        fn seat_at_table() {}
+    }
+
+    mod serving {
+        fn take_order() {}
+
+        fn serve_order() {}
+
+        fn take_payment() {}
+    }
+}
+```
+
+We define a module by starting with the `mod` 关键字，然后定义 module 的名字。
+
+- By using modules, we can group related definitions together and name why they’re related.
+
+> Earlier, we mentioned that src/main.rs and src/lib.rs are called crate roots. The reason for their name is that the contents of either of these two files form a module named crate at the root of the crate’s module structure, known as the module tree.
+
+```
+crate
+ └── front_of_house
+     ├── hosting
+     │   ├── add_to_waitlist
+     │   └── seat_at_table
+     └── serving
+         ├── take_order
+         ├── serve_order
+         └── take_payment
+```
+
+This tree shows how some of the modules nest inside one another (for example, `hosting` nests inside `front_of_house`). The tree also shows that some modules are siblings to each other, meaning they’re defined in the same module (`hosting` and `serving` are defined within `front_of_house`).
+
+> The way privacy works in Rust is that all items (`functions`, `methods`, `structs`, `enums`, `modules`, and `constants`) are **private by default**.
+
+```rs
+mod front_of_house {
+    pub mod hosting {
+        fn add_to_waitlist() {}
+    }
+}
+
+pub fn eat_at_restaurant() {
+    // Absolute path
+    crate::front_of_house::hosting::add_to_waitlist();
+
+    // Relative path
+    front_of_house::hosting::add_to_waitlist();
+}
+```
+
+> **Best Practices for Packages with a Binary and a Libiary**
+> We mentioned a package can contain both a `src/main.rs` binary crate root as well as a `src/lib.rs` libirary crate root, and both crates will have the package name by default.
+> Typically, packages with this pattern will have just enough code in the binary crate to start an executable that calls code within the libary crate. This lets other projects benefit from the most functionality that the package provides, because the library crate's code can be shared.
+> The module tree should be defined in `src/lib.rs`. Then, any public items can be used in the binary crate by starting paths with the name of the package. The binary crate becomes a user of the library crate just like a completely external crate would use the library crate: it can only use the public API. This helps you design a good API; not only are you the author, you’re also a client!
+
+### Starting Relative Paths with `super`
+
+We can also construct relative paths that begin in the parent module by using `super` at the start of the path. This is like starting a filesystem path with the `..` syntax. Why would we want to do this?
+
+```rs
+fn deliver_order() {}
+
+mod back_of_house {
+    fn fix_incorrect_order() {
+        cook_order();
+        super::deliver_order(); // go to the parent module of back_of_house
+        // or we can use the absolute path
+        crate::deliver_order();
+    }
+
+    fn cook_order() {}
+}
+```
+
+### Brining Paths into Scope with the `use` keyword
+
+```rs
+use front_of_house::hosting;
+
+mod front_of_house {
+    pub mod hosting {
+        pub fn add_to_waitlist() {}
+    }
+}
+
+pub fn eat_at_restaurant() {
+    // Absolute path [Preferred]
+    crate::front_of_house::hosting::add_to_waitlist();
+
+    // Relative path
+    front_of_house::hosting::add_to_waitlist();
+
+    // using path
+    hosting::add_to_waitlist();
+}
+
+```
+
+By adding use `crate::front_of_house::hosting` in the crate root, hosting is now a valid name in that scope, just as though the hosting module had been defined in the crate root.
+
+#### Providing New Names with the `as` keyword
+
+`src/lib.rs`
+
+```rs
+use std::fmt::Result;
+use std::io::Result as IoResult;
+
+fn function1() -> Result {
+    // --snip--
+}
+
+fn function2() -> IoResult<()> {
+    // --snip--
+}
+```
+
+#### Re-exporting Names with `pub use`
+
+When we bring a name into scope with the `use` keyword, the name available in the new scope is private.
+
+```rs
+pub use crate::front_of_house::hosting;
+```
+
+#### Using nested paths to clean up large `use` lists
+
+```rs
+// --snip--
+use std::cmp::Ordering;
+use std::io;
+// --snip--
+
+// better way
+use std::{cmp::Ordering, io};
+```
+
+In bigger programs, bringing many items into scope from the same crate or module using paths can reduce the number of separate `use` statements neede.
+
+```rs
+use std::io;
+use std::io::Write;
+
+// better way
+use std::io::{self, Write};
+```
+
+If you want to bring all public items
+
+```rs
+use std::collections::*;
+```
